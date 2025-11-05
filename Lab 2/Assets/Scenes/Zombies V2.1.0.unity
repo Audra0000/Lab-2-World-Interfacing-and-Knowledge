@@ -260,15 +260,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1657325121553188381, guid: 092a4707f8b589a439a015aeb164de54, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 17.113848
+      value: 34.35
       objectReference: {fileID: 0}
     - target: {fileID: 1657325121553188381, guid: 092a4707f8b589a439a015aeb164de54, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -3.6103716
+      value: 10.82
       objectReference: {fileID: 0}
     - target: {fileID: 1657325121553188381, guid: 092a4707f8b589a439a015aeb164de54, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 3.0291624
+      value: -14.32
       objectReference: {fileID: 0}
     - target: {fileID: 1657325121553188381, guid: 092a4707f8b589a439a015aeb164de54, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1041,6 +1041,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 3114220778450132206, guid: 0498bff153b47da41b219320e6f11985, type: 3}
+      propertyPath: m_TagString
+      value: Player
+      objectReference: {fileID: 0}
     - target: {fileID: 6446671471286167415, guid: 0498bff153b47da41b219320e6f11985, type: 3}
       propertyPath: emissionInterval
       value: 1.5
@@ -1579,7 +1583,7 @@ Transform:
   m_GameObject: {fileID: 529462577}
   serializedVersion: 2
   m_LocalRotation: {x: 0.1935987, y: -0.6208558, z: 0.17279421, w: 0.7397295}
-  m_LocalPosition: {x: 16.67, y: 12.26, z: -2.95}
+  m_LocalPosition: {x: 13.88, y: 10.77, z: -4.31}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5458,6 +5462,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   zombiePrefab: {fileID: 4758850491330368697, guid: 5371e4cf2abf53b45b93165679627fb0, type: 3}
   zombieCount: 10
+  zombieLayerName: Zombie
 --- !u!65 &2099053443
 BoxCollider:
   m_ObjectHideFlags: 0
