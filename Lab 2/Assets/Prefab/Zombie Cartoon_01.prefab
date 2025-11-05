@@ -85,15 +85,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: c3543ee10a04bd340b8a8787af6d367d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 23.396086
+      value: -5.7418036
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: c3543ee10a04bd340b8a8787af6d367d, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.0000019073486
+      value: 2.03
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: c3543ee10a04bd340b8a8787af6d367d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -4.351429
+      value: -9.464025
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: c3543ee10a04bd340b8a8787af6d367d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -131,6 +131,10 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: fdb64966e56cc0b47bea31a625d960ab, type: 2}
+    - target: {fileID: 5866666021909216657, guid: c3543ee10a04bd340b8a8787af6d367d, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -152,7 +156,7 @@ PrefabInstance:
       addedObject: {fileID: 6569109438108517826}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: c3543ee10a04bd340b8a8787af6d367d, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1611391738666827385}
+      addedObject: {fileID: 7268570368711294482}
   m_SourcePrefab: {fileID: 100100000, guid: c3543ee10a04bd340b8a8787af6d367d, type: 3}
 --- !u!1 &4758850491330368697 stripped
 GameObject:
@@ -232,8 +236,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 670d3156ce066e443a8106f80868bb21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  communicationRadius: 10
---- !u!136 &1611391738666827385
+--- !u!136 &7268570368711294482
 CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -252,10 +255,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 1
+  m_Radius: 0.13
+  m_Height: 0.88
   m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: 0.44, z: 0}
 --- !u!4 &5278506708224757251 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: c3543ee10a04bd340b8a8787af6d367d, type: 3}
