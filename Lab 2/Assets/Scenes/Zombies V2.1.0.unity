@@ -1508,6 +1508,7 @@ GameObject:
   - component: {fileID: 529462579}
   - component: {fileID: 529462578}
   - component: {fileID: 529462581}
+  - component: {fileID: 529462582}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -1633,6 +1634,20 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
+--- !u!114 &529462582
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 529462577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39e37a277d064294494cdf9b407f986c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 10
+  lookSpeed: 2
 --- !u!4 &531578928 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5909891817251594548, guid: 32507ea3602f7e1479230d5711100c2b, type: 3}
@@ -1769,7 +1784,7 @@ NavMeshObstacle:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 564792083}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_Shape: 0
   m_Extents: {x: 4.609, y: 5.583, z: 4.609}
@@ -5461,7 +5476,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   zombiePrefab: {fileID: 4758850491330368697, guid: 5371e4cf2abf53b45b93165679627fb0, type: 3}
-  zombieCount: 10
+  zombieCount: 5
   zombieLayerName: Zombie
 --- !u!65 &2099053443
 BoxCollider:
