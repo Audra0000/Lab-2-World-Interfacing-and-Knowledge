@@ -28,8 +28,11 @@ public class ZombieAI : MonoBehaviour
     private bool isChasingPlayer = false;
 
     [Header("Vision Settings")]
-    [SerializeField] private float visionRange = 8f;
-    [SerializeField] private float visionAngle = 100f;
+    [SerializeField] private Camera visionCamera;
+    [SerializeField] private LayerMask visionMask;
+    [SerializeField] private float visionRange = 4f;
+    [SerializeField] private float visionCheckInterval = 0.2f;
+    private float timeSinceVisionCheck = 0f;
     private Transform playerTransform;
 
     [Header("Communication Settings")]
@@ -60,6 +63,11 @@ public class ZombieAI : MonoBehaviour
             Debug.LogError("Animator not found " + gameObject.name);
         }
 
+        if (visionCamera == null)
+        {
+            Debug.LogWarning("Vision Camera not assigned on " + gameObject.name + ". Vision system will not work.");
+        }
+
         // Find player in scene
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
@@ -78,7 +86,7 @@ public class ZombieAI : MonoBehaviour
     void Update()
     {
         UpdateAnimation();
-        CheckVision();
+        CheckVisionWithFrustum();
         CheckIfStuck();
 
         switch (currentState)
@@ -154,7 +162,7 @@ public class ZombieAI : MonoBehaviour
         if (isChasingPlayer && playerTransform != null)
         {
             // Update position only if currently seeing player
-            if (CanSeePlayer())
+            if (CanSeePlayerWithFrustum())
             {
                 chaseTarget = playerTransform.position;
                 agent.SetDestination(chaseTarget);
@@ -191,25 +199,48 @@ public class ZombieAI : MonoBehaviour
         ChangeState(ZombieState.Chasing);
     }
 
-    // Vision system
-    void CheckVision()
+    // Vision system using Frustum Culling and Raycast
+    void CheckVisionWithFrustum()
     {
-        if (playerTransform == null) return;
+        if (playerTransform == null || visionCamera == null) return;
 
-        Vector3 directionToPlayer = playerTransform.position - transform.position;
-        float distanceToPlayer = directionToPlayer.magnitude;
+        // Throttle vision checks for performance
+        timeSinceVisionCheck += Time.deltaTime;
+        if (timeSinceVisionCheck < visionCheckInterval) return;
+        timeSinceVisionCheck = 0f;
 
+        // Check distance first (early rejection)
+        float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
         if (distanceToPlayer > visionRange) return;
 
-        // Calculate angle between zombie forward and player
-        Vector3 directionFlat = new Vector3(directionToPlayer.x, 0, directionToPlayer.z);
-        Vector3 forwardFlat = new Vector3(transform.forward.x, 0, transform.forward.z);
-        float angleToPlayer = Vector3.Angle(forwardFlat, directionFlat);
+        // Use OverlapSphere to detect objects within range
+        Collider[] colliders = Physics.OverlapSphere(transform.position, visionRange, visionMask);
+        Plane[] frustumPlanes = GeometryUtility.CalculateFrustumPlanes(visionCamera);
 
-        // Check if within vision cone
-        if (angleToPlayer <= visionAngle / 2f)
+        foreach (Collider col in colliders)
         {
-            OnPlayerSeen(playerTransform.position);
+            // Check if it's the player
+            if (col.gameObject != playerTransform.gameObject) continue;
+
+            // Test if object is within camera frustum
+            if (GeometryUtility.TestPlanesAABB(frustumPlanes, col.bounds))
+            {
+                // Perform raycast to check line of sight from camera position
+                // Apuntar al centro del collider en lugar de la posición del transform
+                Vector3 playerCenter = col.bounds.center;
+                Vector3 directionToPlayer = (playerCenter - visionCamera.transform.position).normalized;
+                float distanceToCameraPosition = Vector3.Distance(visionCamera.transform.position, playerCenter);
+                RaycastHit hit;
+
+                if (Physics.Raycast(visionCamera.transform.position, directionToPlayer, out hit, distanceToCameraPosition + 0.5f, visionMask))
+                {
+                    // Check if we hit the player
+                    if (hit.collider.gameObject == playerTransform.gameObject)
+                    {
+                        OnPlayerSeen(playerTransform.position);
+                    }
+                }
+            }
         }
     }
 
@@ -226,20 +257,37 @@ public class ZombieAI : MonoBehaviour
         }
     }
 
-    bool CanSeePlayer()
+    bool CanSeePlayerWithFrustum()
     {
-        if (playerTransform == null) return false;
+        if (playerTransform == null || visionCamera == null) return false;
 
-        Vector3 directionToPlayer = playerTransform.position - transform.position;
-        float distanceToPlayer = directionToPlayer.magnitude;
-
+        float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
         if (distanceToPlayer > visionRange) return false;
 
-        Vector3 directionFlat = new Vector3(directionToPlayer.x, 0, directionToPlayer.z);
-        Vector3 forwardFlat = new Vector3(transform.forward.x, 0, transform.forward.z);
-        float angleToPlayer = Vector3.Angle(forwardFlat, directionFlat);
+        // Calculate frustum planes
+        Plane[] frustumPlanes = GeometryUtility.CalculateFrustumPlanes(visionCamera);
 
-        return angleToPlayer <= visionAngle / 2f;
+        // Get player collider
+        Collider playerCollider = playerTransform.GetComponent<Collider>();
+        if (playerCollider == null) return false;
+
+        // Test if player is within frustum
+        if (!GeometryUtility.TestPlanesAABB(frustumPlanes, playerCollider.bounds))
+            return false;
+
+        // Raycast to check line of sight from camera position
+        // Apuntar al centro del collider del jugador
+        Vector3 playerCenter = playerCollider.bounds.center;
+        Vector3 directionToPlayer = (playerCenter - visionCamera.transform.position).normalized;
+        float actualDistance = Vector3.Distance(visionCamera.transform.position, playerCenter);
+        RaycastHit hit;
+
+        if (Physics.Raycast(visionCamera.transform.position, directionToPlayer, out hit, actualDistance + 0.5f, visionMask))
+        {
+            return hit.collider.gameObject == playerTransform.gameObject;
+        }
+
+        return false;
     }
 
     // Communication system between zombies
@@ -343,17 +391,104 @@ public class ZombieAI : MonoBehaviour
     // Gizmos visualization
     void OnDrawGizmos()
     {
-        // Vision cone
-        Vector3 leftBoundary = Quaternion.Euler(0, -visionAngle / 2f, 0) * transform.forward * visionRange;
-        Vector3 rightBoundary = Quaternion.Euler(0, visionAngle / 2f, 0) * transform.forward * visionRange;
+        if (visionCamera != null)
+        {
+            // Draw vision range sphere
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(transform.position, visionRange);
 
-        Gizmos.color = Color.blue;
-        Gizmos.DrawLine(transform.position, transform.position + leftBoundary);
-        Gizmos.DrawLine(transform.position, transform.position + rightBoundary);
+            // Draw camera frustum
+            Gizmos.color = Color.blue;
+            Gizmos.matrix = visionCamera.transform.localToWorldMatrix;
+            Gizmos.DrawFrustum(Vector3.zero, visionCamera.fieldOfView, visionRange, visionCamera.nearClipPlane, visionCamera.aspect);
+            Gizmos.matrix = Matrix4x4.identity;
+
+            // Draw frustum planes for better visualization
+            Plane[] planes = GeometryUtility.CalculateFrustumPlanes(visionCamera);
+            DrawFrustumPlanes(planes);
+
+            // Draw line to player if visible
+            if (playerTransform != null && CanSeePlayerWithFrustum())
+            {
+                Gizmos.color = Color.red;
+                Collider playerCollider = playerTransform.GetComponent<Collider>();
+                Vector3 targetPos = playerCollider != null ? playerCollider.bounds.center : playerTransform.position;
+                Gizmos.DrawLine(visionCamera.transform.position, targetPos);
+            }
+        }
 
         // Communication range
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, communicationRange);
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        // More detailed frustum visualization when selected
+        if (visionCamera != null)
+        {
+            DrawDetailedFrustum();
+        }
+    }
+
+    void DrawFrustumPlanes(Plane[] planes)
+    {
+        // Draw frustum edges more clearly
+        if (visionCamera == null) return;
+
+        Vector3 camPos = visionCamera.transform.position;
+        Vector3 camForward = visionCamera.transform.forward;
+        Vector3 camUp = visionCamera.transform.up;
+        Vector3 camRight = visionCamera.transform.right;
+
+        float halfHeight = Mathf.Tan(visionCamera.fieldOfView * 0.5f * Mathf.Deg2Rad) * visionRange;
+        float halfWidth = halfHeight * visionCamera.aspect;
+
+        Vector3 farCenter = camPos + camForward * visionRange;
+        Vector3 farTopLeft = farCenter + camUp * halfHeight - camRight * halfWidth;
+        Vector3 farTopRight = farCenter + camUp * halfHeight + camRight * halfWidth;
+        Vector3 farBottomLeft = farCenter - camUp * halfHeight - camRight * halfWidth;
+        Vector3 farBottomRight = farCenter - camUp * halfHeight + camRight * halfWidth;
+
+        // Draw frustum lines
+        Gizmos.color = new Color(0, 1, 1, 0.3f);
+        Gizmos.DrawLine(camPos, farTopLeft);
+        Gizmos.DrawLine(camPos, farTopRight);
+        Gizmos.DrawLine(camPos, farBottomLeft);
+        Gizmos.DrawLine(camPos, farBottomRight);
+
+        // Draw far plane rectangle
+        Gizmos.DrawLine(farTopLeft, farTopRight);
+        Gizmos.DrawLine(farTopRight, farBottomRight);
+        Gizmos.DrawLine(farBottomRight, farBottomLeft);
+        Gizmos.DrawLine(farBottomLeft, farTopLeft);
+    }
+
+    void DrawDetailedFrustum()
+    {
+        Vector3 camPos = visionCamera.transform.position;
+        Vector3 camForward = visionCamera.transform.forward;
+        Vector3 camUp = visionCamera.transform.up;
+        Vector3 camRight = visionCamera.transform.right;
+
+        // Draw multiple depth slices for better depth perception
+        for (float depth = visionCamera.nearClipPlane; depth <= visionRange; depth += visionRange / 5f)
+        {
+            float halfHeight = Mathf.Tan(visionCamera.fieldOfView * 0.5f * Mathf.Deg2Rad) * depth;
+            float halfWidth = halfHeight * visionCamera.aspect;
+
+            Vector3 center = camPos + camForward * depth;
+            Vector3 topLeft = center + camUp * halfHeight - camRight * halfWidth;
+            Vector3 topRight = center + camUp * halfHeight + camRight * halfWidth;
+            Vector3 bottomLeft = center - camUp * halfHeight - camRight * halfWidth;
+            Vector3 bottomRight = center - camUp * halfHeight + camRight * halfWidth;
+
+            Gizmos.color = new Color(1, 1, 0, 0.2f);
+            Gizmos.DrawLine(topLeft, topRight);
+            Gizmos.DrawLine(topRight, bottomRight);
+            Gizmos.DrawLine(bottomRight, bottomLeft);
+            Gizmos.DrawLine(bottomLeft, topLeft);
+        }
     }
 
     void UpdateAnimation()

@@ -240,14 +240,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 670d3156ce066e443a8106f80868bb21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  searchRadius: 20
+  searchRadius: 16.7
   minSearchWaitTime: 2
   maxSearchWaitTime: 5
   chaseTimeout: 0.5
-  visionRange: 8
-  visionAngle: 100
+  visionCamera: {fileID: 0}
+  visionMask:
+    serializedVersion: 2
+    m_Bits: 0
+  visionRange: 7.7
+  visionCheckInterval: 0.2
   communicationRange: 15
   zombieTag: Zombie
+  stuckCheckInterval: 1
+  stuckDistanceThreshold: 0.5
+  stuckTimeThreshold: 3
 --- !u!136 &7268570368711294482
 CapsuleCollider:
   m_ObjectHideFlags: 0
