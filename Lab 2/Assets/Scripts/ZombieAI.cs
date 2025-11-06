@@ -36,6 +36,14 @@ public class ZombieAI : MonoBehaviour
     [SerializeField] private float communicationRange = 15f;
     [SerializeField] private string zombieTag = "Zombie";
 
+    [Header("Stuck Detection")]
+    [SerializeField] private float stuckCheckInterval = 1f;
+    [SerializeField] private float stuckDistanceThreshold = 0.5f;
+    [SerializeField] private float stuckTimeThreshold = 3f;
+    private Vector3 lastPosition;
+    private float timeSinceLastCheck = 0f;
+    private float timeStuck = 0f;
+
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -64,12 +72,14 @@ public class ZombieAI : MonoBehaviour
         }
 
         ChangeState(ZombieState.Searching);
+        lastPosition = transform.position;
     }
 
     void Update()
     {
         UpdateAnimation();
         CheckVision();
+        CheckIfStuck();
 
         switch (currentState)
         {
@@ -266,6 +276,68 @@ public class ZombieAI : MonoBehaviour
         chaseTarget = ultimaPosicionVisto;
         isChasingPlayer = false;
         ChangeState(ZombieState.Chasing);
+    }
+
+    // Stuck detection system
+    void CheckIfStuck()
+    {
+        timeSinceLastCheck += Time.deltaTime;
+
+        if (timeSinceLastCheck >= stuckCheckInterval)
+        {
+            float distanceMoved = Vector3.Distance(transform.position, lastPosition);
+
+            // If zombie has barely moved and should be moving
+            if (distanceMoved < stuckDistanceThreshold && agent.hasPath && !agent.pathPending)
+            {
+                timeStuck += timeSinceLastCheck;
+
+                if (timeStuck >= stuckTimeThreshold)
+                {
+                    Debug.Log(gameObject.name + " got stuck! Finding new route...");
+                    HandleStuckState();
+                    timeStuck = 0f;
+                }
+            }
+            else
+            {
+                timeStuck = 0f;
+            }
+
+            lastPosition = transform.position;
+            timeSinceLastCheck = 0f;
+        }
+    }
+
+    void HandleStuckState()
+    {
+        // Try to find a new path
+        agent.ResetPath();
+
+        switch (currentState)
+        {
+            case ZombieState.Searching:
+                SetRandomSearchDestination();
+                break;
+            case ZombieState.Chasing:
+                // If stuck while chasing, try a position near the target
+                Vector3 offset = Random.insideUnitSphere * 3f;
+                offset.y = 0;
+                Vector3 newTarget = chaseTarget + offset;
+
+                NavMeshHit hit;
+                if (NavMesh.SamplePosition(newTarget, out hit, 5f, NavMesh.AllAreas))
+                {
+                    agent.SetDestination(hit.position);
+                }
+                else
+                {
+                    // If can't find alternative, return to searching
+                    isChasingPlayer = false;
+                    ChangeState(ZombieState.Searching);
+                }
+                break;
+        }
     }
 
     // Gizmos visualization
